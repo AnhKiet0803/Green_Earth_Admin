@@ -118,14 +118,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right hidden xs:block">
-            <p className="text-sm font-bold text-slate-900 leading-none">Admin</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Administrator</p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
-            AD
-          </div>
-        </div>
+          <div className="text-right hidden xs:block">
+            <p className="text-sm font-bold text-slate-900 leading-none">Admin</p>
+            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Administrator</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+            AD
+          </div>
+        </div>
       </header>
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
           <div className="w-full max-w-[1400px] mx-auto">
