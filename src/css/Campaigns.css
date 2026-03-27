@@ -1,0 +1,275 @@
+* {
+  box-sizing: border-box;
+}
+
+.campaign-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.campaign-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.campaign-subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.campaign-create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #059669;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.campaign-create-btn:hover {
+  background: #047857;
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.campaign-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.campaign-image-wrap {
+  position: relative;
+  height: 192px;
+  background: #e2e8f0;
+}
+
+.campaign-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.campaign-badge-wrap {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.campaign-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+}
+
+.campaign-status.active {
+  background: #10b981;
+}
+
+.campaign-status.completed {
+  background: #3b82f6;
+}
+
+.campaign-status.planned {
+  background: #64748b;
+}
+
+.campaign-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.campaign-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.campaign-card-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.campaign-description {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.campaign-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.campaign-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campaign-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.campaign-progress-label {
+  color: #64748b;
+}
+
+.campaign-progress-percent {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.campaign-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.campaign-progress-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 1s ease;
+}
+
+.campaign-progress-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.campaign-progress-info strong {
+  color: #0f172a;
+}
+
+.campaign-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.campaign-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.campaign-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn,
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn {
+  color: #94a3b8;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+}
+
+.action-btn {
+  color: #94a3b8;
+}
+
+.edit-btn:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.delete-btn:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-md {
+  width: 20px;
+  height: 20px;
+}
+
+@media (min-width: 640px) {
+  .campaign-title {
+    font-size: 36px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .campaign-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

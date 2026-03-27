@@ -1,25 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { Plus, Search, Filter, MoreVertical, Edit2, Trash2, Eye, X } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, Eye, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const initialArticles = [
-  { id: '1', title: 'Climate Change: The Greatest Challenge of the 21st Century', author: 'Le Minh', category: 'Warning', date: '2026-03-20', status: 'published' },
-  { id: '2', title: '10 Ways to Reduce Plastic Waste at Home', author: 'Tran Hoa', category: 'Guide', date: '2026-03-18', status: 'published' },
-  { id: '3', title: 'Water Pollution Status in Industrial Zones', author: 'Nguyen Nam', category: 'Assessment', date: '2026-03-15', status: 'draft' },
-];
+const API_URL = "http://localhost:8080/api/green_earth/article";
 
 export default function Articles() {
-  const [articles, setArticles] = useState(initialArticles);
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentArticle, setCurrentArticle] = useState<any>(null);
+  const [currentArticle, setCurrentArticle] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [title, setTitle] = useState('');
+  const [categoryId, setCategoryId] = useState(1); 
   const [content, setContent] = useState('');
+  const [image, setImage] = useState('');
 
-  const handleOpenModal = (article: any = null) => {
-    setCurrentArticle(article);
-    setContent(article ? 'Sample article content...' : '');
+  const fetchArticles = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      setArticles(result.data || []);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const filteredArticles = articles.filter((article) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      article.title?.toLowerCase().includes(searchLower) ||
+      article.categoryName?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleOpenModal = (article = null) => {
+    if (article) {
+      setCurrentArticle(article);
+      setTitle(article.title);
+      setContent(article.content);
+      setImage(article.image || '');
+    } else {
+      setCurrentArticle(null);
+      setTitle('');
+      setContent('');
+      setImage('');
+    }
     setIsModalOpen(true);
+  };
+
+
+  const handleSave = async () => {
+    const isUpdate = !!currentArticle;
+    const url = isUpdate ? `${API_URL}/${currentArticle.id}` : API_URL;
+    const method = isUpdate ? 'PUT' : 'POST';
+
+    const payload = {
+      title,
+      content,
+      image,
+      authorId: 1,
+      categoryId: parseInt(categoryId)
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        fetchArticles();
+        setIsModalOpen(false);
+      } else {
+        alert("Failed to save article. Please check your data.");
+      }
+    } catch (error) {
+      alert("Error connection to server.");
+    }
   };
 
   return (
@@ -31,96 +98,81 @@ export default function Articles() {
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 rounded-lg text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 rounded-lg text-sm font-medium text-white hover:bg-emerald-700 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Write New Article
         </button>
       </div>
-
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search articles..." 
+            placeholder="Search articles or categories..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
           />
         </div>
-        <div className="flex gap-2">
-          <select className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 outline-none focus:ring-2 focus:ring-emerald-500">
-            <option>All Categories</option>
-            <option>Warning</option>
-            <option>Assessment</option>
-            <option>Guide</option>
-          </select>
-          <button className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100">
-            <Filter className="w-5 h-5" />
-          </button>
-        </div>
       </div>
-
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                 <th className="px-6 py-4">Title</th>
-                <th className="px-6 py-4">Author</th>
+                <th className="px-6 py-4">Creation Date</th>
                 <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {articles.map((article) => (
-                <tr key={article.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-slate-900 line-clamp-1">{article.title}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{article.author}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">{article.category}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{article.date}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      article.status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {article.status === 'published' ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleOpenModal(article)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="py-10 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600" />
                   </td>
                 </tr>
-              ))}
+              ) : filteredArticles.length > 0 ? (
+                filteredArticles.map((article) => (
+                  <tr key={article.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{article.title}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {article.createdAt ? new Date(article.createdAt).toLocaleDateString('en-GB') : "No Date"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">
+                        {article.categoryName || "Uncategorized"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => handleOpenModal(article)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="py-10 text-center text-slate-400 text-sm">
+                    No articles found matching "{searchTerm}"
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setIsModalOpen(false)}
             />
@@ -134,10 +186,7 @@ export default function Articles() {
                 <h2 className="text-xl font-bold text-slate-900">
                   {currentArticle ? 'Edit Article' : 'Write New Article'}
                 </h2>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                   <X className="w-5 h-5 text-slate-500" />
                 </button>
               </div>
@@ -148,7 +197,8 @@ export default function Articles() {
                     <label className="text-sm font-semibold text-slate-700">Article Title</label>
                     <input 
                       type="text" 
-                      defaultValue={currentArticle?.title}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                       placeholder="Enter title..." 
                       className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                     />
@@ -156,14 +206,32 @@ export default function Articles() {
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Category</label>
                     <select 
-                      defaultValue={currentArticle?.category}
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
                       className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                     >
-                      <option>Warning</option>
-                      <option>Assessment</option>
-                      <option>Guide</option>
+                      <option value="1">Environment</option>
+                      <option value="2">Climate Change</option>
+                      <option value="3">Recycling</option>
+                      <option value="3">Community</option>
+                      <option value="3">Education</option>
+                      <option value="3">Sustainability</option>
+                      <option value="3">Ocean Protection</option>
+                      <option value="3">Forestation</option>
+                      <option value="3">Green Energy</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Thumbnail Image URL</label>
+                  <input 
+                    type="text" 
+                    value={image}
+                    onChange={(e) => setImage(e.target.value)}
+                    placeholder="https://..." 
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -176,7 +244,7 @@ export default function Articles() {
                       modules={{
                         toolbar: [
                           [{ 'header': [1, 2, 3, false] }],
-                          ['bold', 'italic', 'underline', 'strike'],
+                          ['bold', 'italic', 'underline'],
                           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                           ['link', 'image'],
                           ['clean']
@@ -194,7 +262,10 @@ export default function Articles() {
                 >
                   Cancel
                 </button>
-                <button className="px-6 py-2 bg-emerald-600 rounded-lg text-sm font-medium text-white hover:bg-emerald-700 transition-colors">
+                <button 
+                  onClick={handleSave}
+                  className="px-6 py-2 bg-emerald-600 rounded-lg text-sm font-medium text-white hover:bg-emerald-700 transition-all active:scale-95"
+                >
                   Save Article
                 </button>
               </div>
