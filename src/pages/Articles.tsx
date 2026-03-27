@@ -133,6 +133,7 @@ export default function Articles() {
                   <td colSpan={4} className="py-10 text-center">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600" />
                   </td>
+
                 </tr>
               ) : filteredArticles.length > 0 ? (
                 filteredArticles.map((article) => (

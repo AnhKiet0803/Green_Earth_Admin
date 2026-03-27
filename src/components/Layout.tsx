@@ -107,25 +107,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
-          <div className="flex items-center gap-4 min-w-0 overflow-hidden">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg hover:bg-slate-100 shrink-0 lg:hidden" 
-            >
-              <Menu className="w-6 h-6 text-slate-600" />
-            </button>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-slate-900 leading-none">Admin</p>
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Administrator</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
-              AD
-            </div>
-          </div>
-        </header>
+        
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <div className="flex items-center gap-4 min-w-0 overflow-hidden">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 rounded-lg hover:bg-slate-100 shrink-0 lg:hidden" 
+          >
+            <Menu className="w-6 h-6 text-slate-600" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right hidden xs:block">
+            <p className="text-sm font-bold text-slate-900 leading-none">Admin</p>
+            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Administrator</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+            AD
+          </div>
+        </div>
+      </header>
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
           <div className="w-full max-w-[1400px] mx-auto">
             {children}
