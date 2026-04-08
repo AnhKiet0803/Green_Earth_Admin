@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Heart, Edit2, Trash2, X, Loader2, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion'; // Đã sửa đường dẫn import chuẩn
 
-const API_URL = "http://localhost:8080/api/green_earth/partner";
+const API_URL = "http://localhost:8081/api/green_earth/partner";
 
 export default function Sponsors() {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm state khóa nút bấm
   
   const [formData, setFormData] = useState({
     id: null,
@@ -22,7 +23,10 @@ export default function Sponsors() {
       setLoading(true);
       const response = await fetch(API_URL);
       const result = await response.json();
-      setSponsors(result.data || []);
+      
+      // Đảo ngược mảng để đối tác mới thêm lên đầu (giống Campaign)
+      const data = result.data || result || [];
+      setSponsors([...data].reverse());
     } catch (error) {
       console.error("Lỗi fetch:", error);
     } finally {
@@ -36,6 +40,9 @@ export default function Sponsors() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Chặn nếu đang lưu dở
+    
+    setIsSubmitting(true);
     const isUpdate = !!formData.id;
     const url = isUpdate ? `${API_URL}/${formData.id}` : API_URL;
     const method = isUpdate ? 'PUT' : 'POST';
@@ -55,9 +62,13 @@ export default function Sponsors() {
       if (response.ok) {
         fetchSponsors();
         closeModal();
+      } else {
+        alert("Lưu thất bại! Vui lòng kiểm tra lại dữ liệu.");
       }
     } catch (error) {
-      alert("Lỗi khi lưu dữ liệu!");
+      alert("Lỗi kết nối đến Server!");
+    } finally {
+      setIsSubmitting(false); // Mở khóa nút bấm
     }
   };
 
@@ -68,6 +79,8 @@ export default function Sponsors() {
       const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setSponsors(prev => prev.filter(item => item.id !== id));
+      } else {
+        alert("Xóa thất bại!");
       }
     } catch (error) {
       alert("Lỗi khi xóa!");
@@ -102,8 +115,9 @@ export default function Sponsors() {
           Add Sponsor
         </button>
       </div>
+
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-500" /></div>
+        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-500 w-10 h-10" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sponsors.map((sponsor, i) => (
@@ -148,9 +162,9 @@ export default function Sponsors() {
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-4 flex-1">
                   <h3 className="font-bold text-slate-900 text-lg truncate">{sponsor.name}</h3>
-                  <p className="text-sm text-slate-500 flex items-start gap-2 min-h-[40px]">
+                  <p className="text-sm text-slate-500 flex items-start gap-2 min-h-[40px] line-clamp-3">
                     <Heart className="w-4 h-4 text-emerald-500 mt-1 flex-shrink-0" />
                     {sponsor.description}
                   </p>
@@ -161,16 +175,18 @@ export default function Sponsors() {
                     href={sponsor.website} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="mt-auto flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
+                    className="mt-auto flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline pt-4 border-t border-slate-100"
                   >
                     <Globe className="w-3 h-3" />
-                    Website
+                    Visit Website
                   </a>
                 )}
               </motion.div>
             ))}
         </div>
       )}
+
+      {/* MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
@@ -208,7 +224,7 @@ export default function Sponsors() {
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Logo URL</label>
                   <div className="flex gap-3 items-center">
                     <input 
-                      type="url" placeholder="https://images.unsplash..." 
+                      type="url" placeholder="https://..." 
                       className="flex-1 px-4 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                       value={formData.logo} onChange={e => setFormData({...formData, logo: e.target.value})} 
                     />
@@ -231,8 +247,10 @@ export default function Sponsors() {
                 </div>
                 <button 
                   type="submit" 
-                  className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-md shadow-emerald-200 mt-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-md shadow-emerald-200 mt-2 disabled:opacity-50 flex justify-center items-center gap-2"
                 >
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                   {formData.id ? 'Update Partner' : 'Create Partner'}
                 </button>
               </form>

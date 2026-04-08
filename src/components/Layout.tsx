@@ -8,7 +8,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const API_ORG = "http://localhost:8080/api/green_earth/organization_info";
+const API_ORG = "http://localhost:8081/api/green_earth/organization_info";
 
 const navItems = [
   { title: 'Dashboard', path: '/', icon: LayoutDashboard },

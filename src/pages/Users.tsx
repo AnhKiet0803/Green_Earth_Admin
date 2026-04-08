@@ -17,7 +17,7 @@ const UsersPage = () => {
     avatar: ''
   });
 
-  const API_URL = 'http://localhost:8080/api/green_earth/user';
+  const API_URL = 'http://localhost:8081/api/green_earth/user';
 
   const fetchUsers = () => {
     setLoading(true);

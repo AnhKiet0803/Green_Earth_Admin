@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, Flag, DollarSign, Loader2, Calendar } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion'; 
 
-const API_DONATIONS = "http://localhost:8080/api/green_earth/donation";
-const API_CAMPAIGNS = "http://localhost:8080/api/green_earth/campaign";
+const API_DONATIONS = "http://localhost:8081/api/green_earth/donation";
+const API_CAMPAIGNS = "http://localhost:8081/api/green_earth/campaign";
 
 export default function Dashboard() {
   const [allDonations, setAllDonations] = useState([]);
@@ -13,23 +13,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [viewAll, setViewAll] = useState(false);
 
+  // Hàm xử lý biểu đồ: Quét dữ liệu thực tế để vẽ line tăng trưởng
   const processMonthlyGrowth = (donations) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthlyValues = months.map(m => ({ name: m, value: 0 }));
 
     donations.forEach(d => {
-      let rawDate = d.donationDate; 
+      // Bao quát các tên biến ngày tháng
+      let rawDate = d.donationDate || d.createdAt || d.created_at; 
       
       if (rawDate) {
-        const formattedDateStr = rawDate.replace(" ", "T");
+        // Fix lỗi định dạng ngày của Java (chuyển khoảng trắng thành T để JS hiểu)
+        const formattedDateStr = rawDate.toString().replace(" ", "T");
         const dateObj = new Date(formattedDateStr);
 
         if (!isNaN(dateObj.getTime())) {
           const monthIndex = dateObj.getMonth();
           const year = dateObj.getFullYear();
 
-          if (year === 2026) {
-            monthlyValues[monthIndex].value += parseFloat(d.amount || 0);
+          // Lọc dữ liệu cho năm hiện tại
+          if (year === new Date().getFullYear()) {
+            monthlyValues[monthIndex].value += Number(d.amount || 0);
           }
         }
       }
@@ -42,27 +46,41 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      
+      // Gọi API
       const [resDonations, resCampaigns] = await Promise.all([
         fetch(API_DONATIONS).then(res => res.json()),
         fetch(API_CAMPAIGNS).then(res => res.json())
       ]);
 
-      const donations = resDonations.data || [];
-      const campaigns = resCampaigns.data || [];
+      // QUAN TRỌNG NHẤT LÀ CHỖ NÀY:
+      // Kiểm tra xem Java trả về thẳng một Mảng [...] hay một Object { data: [...] }
+      const donations = Array.isArray(resDonations) ? resDonations : (resDonations.data || []);
+      const campaigns = Array.isArray(resCampaigns) ? resCampaigns : (resCampaigns.data || []);
+
+      // In ra Console (F12) để bạn tận mắt nhìn thấy dữ liệu
+      console.log("🚀 Kiểm tra Donations:", donations);
+      console.log("🚀 Kiểm tra Campaigns:", campaigns);
 
       setAllDonations(donations);
       setChartData(processMonthlyGrowth(donations));
 
-      const totalRaised = donations.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
-      const activeCount = campaigns.filter(c => c.status === 'ONGOING' || c.status === 'active').length;
+      // Tính toán
+      const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+      
+      const activeCount = campaigns.filter(c => 
+        c.status === 'ONGOING' || c.status === 'ACTIVE' || c.status === 'active'
+      ).length;
+
+      const uniqueDonors = new Set(donations.map(d => d.userId || d.donorName || d.id)).size;
 
       setStats([
         { title: 'Total Collected', value: `$${totalRaised.toLocaleString()}`, icon: DollarSign, color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600' },
         { title: 'Active Campaigns', value: activeCount, icon: Flag, color: 'amber', bg: 'bg-amber-50', text: 'text-amber-600' },
-        { title: 'Total Donors', value: donations.length, icon: Users, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-600' },
+        { title: 'Total Donors', value: uniqueDonors, icon: Users, color: 'blue', bg: 'bg-blue-50', text: 'text-blue-600' },
       ]);
     } catch (error) {
-      console.error("Dashboard error:", error);
+      console.error("Lỗi lấy dữ liệu từ Backend:", error);
     } finally {
       setLoading(false);
     }
@@ -101,27 +119,34 @@ export default function Dashboard() {
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
-          Donation Growth (2026)
+          Donation Growth ({new Date().getFullYear()})
         </h3>
-        <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(v) => `$${v}`} />
-              <Tooltip 
-                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                formatter={(value) => [`$${value.toLocaleString()}`, 'Raised']}
-              />
-              <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorReal)" />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* FIX RECHARTS WARNING: Thêm absolute/relative và kiểm tra chartData */}
+        <div className="h-[350px] w-full relative">
+          {chartData && chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(v) => `$${v}`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value) => [`$${value.toLocaleString()}`, 'Raised']}
+                />
+                <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorReal)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-slate-400 italic text-sm">
+              Đang tải dữ liệu biểu đồ...
+            </div>
+          )}
         </div>
       </div>
 
@@ -143,19 +168,32 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {(viewAll ? allDonations : allDonations.slice(0, 5)).map((d, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">{d.donorName || "Anonymous"}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{d.campaignName}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-emerald-600 text-center">${d.amount?.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-slate-400 text-right flex items-center justify-end gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                    {d.donationDate ? new Date(d.donationDate.replace(" ", "T")).toLocaleDateString('en-GB') : 'N/A'}
-                  </td>
-                </tr>
-              ))}
+              {[...allDonations].reverse().slice(0, viewAll ? allDonations.length : 5).map((d, idx) => {
+                
+                // Trích xuất tên linh hoạt tùy theo Backend trả về
+                const donorName = d.donorName || d.user?.username || d.userName || "Anonymous";
+                const campName = d.campaignName || d.campaign?.title || `Campaign #${d.campaignId}`;
+                const rawDate = d.donationDate || d.createdAt || d.created_at;
+
+                return (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">{donorName}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{campName}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-emerald-600 text-center">${Number(d.amount || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400 text-right flex items-center justify-end gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                      {rawDate ? new Date(rawDate.replace(" ", "T")).toLocaleDateString('en-GB') : 'N/A'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+          {allDonations.length === 0 && (
+            <div className="text-center py-10 text-slate-400 text-sm italic">
+              Chưa có dữ liệu giao dịch nào.
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Star, Edit2, Trash2, X, Loader2, Instagram, Link as LinkIcon, Facebook } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const API_URL = "http://localhost:8080/api/green_earth/celebrity";
+const API_URL = "http://localhost:8081/api/green_earth/celebrity";
 
 export default function Celebrities() {
   const [celebrities, setCelebrities] = useState([]);

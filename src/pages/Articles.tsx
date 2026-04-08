@@ -4,7 +4,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { Plus, Search, Filter, Edit2, Trash2, Eye, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const API_URL = "http://localhost:8080/api/green_earth/article";
+const API_URL = "http://localhost:8081/api/green_earth/article";
 
 export default function Articles() {
   const [articles, setArticles] = useState([]);
