@@ -3,7 +3,7 @@ import { Plus, Search, Edit2, Trash2, Calendar, Tag, Loader2 } from 'lucide-reac
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = "http://localhost:8080/api/green_earth/article";
+const API_URL = "http://localhost:8081/api/green_earth/article";
 
 // Định nghĩa kiểu dữ liệu để hết báo đỏ TypeScript
 interface Article {

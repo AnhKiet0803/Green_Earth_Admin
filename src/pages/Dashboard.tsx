@@ -3,8 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, Flag, DollarSign, Loader2, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion'; 
 
-const API_DONATIONS = "http://localhost:8080/api/green_earth/donation";
-const API_CAMPAIGNS = "http://localhost:8080/api/green_earth/campaign";
+const API_DONATIONS = "http://localhost:8081/api/green_earth/donation";
+const API_CAMPAIGNS = "http://localhost:8081/api/green_earth/campaign";
 
 export default function Dashboard() {
   const [allDonations, setAllDonations] = useState([]);
