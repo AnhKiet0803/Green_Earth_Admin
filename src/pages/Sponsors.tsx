@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Heart, Edit2, Trash2, X, Loader2, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion'; // Đã sửa đường dẫn import chuẩn
+import { motion, AnimatePresence } from 'framer-motion'; 
 
-const API_URL = "http://localhost:8081/api/green_earth/partner";
+const API_URL = "http://localhost:8080/api/green_earth/partner";
 
 export default function Sponsors() {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm state khóa nút bấm
+  const [isSubmitting, setIsSubmitting] = useState(false); 
   
   const [formData, setFormData] = useState({
     id: null,
@@ -23,8 +23,6 @@ export default function Sponsors() {
       setLoading(true);
       const response = await fetch(API_URL);
       const result = await response.json();
-      
-      // Đảo ngược mảng để đối tác mới thêm lên đầu (giống Campaign)
       const data = result.data || result || [];
       setSponsors([...data].reverse());
     } catch (error) {
@@ -40,7 +38,7 @@ export default function Sponsors() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Chặn nếu đang lưu dở
+    if (isSubmitting) return; 
     
     setIsSubmitting(true);
     const isUpdate = !!formData.id;
@@ -68,7 +66,7 @@ export default function Sponsors() {
     } catch (error) {
       alert("Lỗi kết nối đến Server!");
     } finally {
-      setIsSubmitting(false); // Mở khóa nút bấm
+      setIsSubmitting(false); 
     }
   };
 
@@ -186,7 +184,6 @@ export default function Sponsors() {
         </div>
       )}
 
-      {/* MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">

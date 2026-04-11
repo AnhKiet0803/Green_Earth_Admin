@@ -3,8 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Users, Flag, DollarSign, Loader2, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion'; 
 
-const API_DONATIONS = "http://localhost:8081/api/green_earth/donation";
-const API_CAMPAIGNS = "http://localhost:8081/api/green_earth/campaign";
+const API_DONATIONS = "http://localhost:8080/api/green_earth/donation";
+const API_CAMPAIGNS = "http://localhost:8080/api/green_earth/campaign";
 
 export default function Dashboard() {
   const [allDonations, setAllDonations] = useState([]);
@@ -13,17 +13,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [viewAll, setViewAll] = useState(false);
 
-  // Hàm xử lý biểu đồ: Quét dữ liệu thực tế để vẽ line tăng trưởng
   const processMonthlyGrowth = (donations) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthlyValues = months.map(m => ({ name: m, value: 0 }));
 
     donations.forEach(d => {
-      // Bao quát các tên biến ngày tháng
       let rawDate = d.donationDate || d.createdAt || d.created_at; 
       
       if (rawDate) {
-        // Fix lỗi định dạng ngày của Java (chuyển khoảng trắng thành T để JS hiểu)
         const formattedDateStr = rawDate.toString().replace(" ", "T");
         const dateObj = new Date(formattedDateStr);
 
@@ -31,7 +28,6 @@ export default function Dashboard() {
           const monthIndex = dateObj.getMonth();
           const year = dateObj.getFullYear();
 
-          // Lọc dữ liệu cho năm hiện tại
           if (year === new Date().getFullYear()) {
             monthlyValues[monthIndex].value += Number(d.amount || 0);
           }
@@ -46,26 +42,16 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Gọi API
       const [resDonations, resCampaigns] = await Promise.all([
         fetch(API_DONATIONS).then(res => res.json()),
         fetch(API_CAMPAIGNS).then(res => res.json())
       ]);
 
-      // QUAN TRỌNG NHẤT LÀ CHỖ NÀY:
-      // Kiểm tra xem Java trả về thẳng một Mảng [...] hay một Object { data: [...] }
       const donations = Array.isArray(resDonations) ? resDonations : (resDonations.data || []);
       const campaigns = Array.isArray(resCampaigns) ? resCampaigns : (resCampaigns.data || []);
-
-      // In ra Console (F12) để bạn tận mắt nhìn thấy dữ liệu
-      console.log("🚀 Kiểm tra Donations:", donations);
-      console.log("🚀 Kiểm tra Campaigns:", campaigns);
-
       setAllDonations(donations);
       setChartData(processMonthlyGrowth(donations));
 
-      // Tính toán
       const totalRaised = donations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
       
       const activeCount = campaigns.filter(c => 
@@ -121,7 +107,6 @@ export default function Dashboard() {
         <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
           Donation Growth ({new Date().getFullYear()})
         </h3>
-        {/* FIX RECHARTS WARNING: Thêm absolute/relative và kiểm tra chartData */}
         <div className="h-[350px] w-full relative">
           {chartData && chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -169,8 +154,7 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {[...allDonations].reverse().slice(0, viewAll ? allDonations.length : 5).map((d, idx) => {
-                
-                // Trích xuất tên linh hoạt tùy theo Backend trả về
+
                 const donorName = d.donorName || d.user?.username || d.userName || "Anonymous";
                 const campName = d.campaignName || d.campaign?.title || `Campaign #${d.campaignId}`;
                 const rawDate = d.donationDate || d.createdAt || d.created_at;

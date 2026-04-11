@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-// --- 1. IMPORT TRÌNH SOẠN THẢO WORD ---
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -24,9 +22,7 @@ export default function Organization() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true); 
 
-  const API = "http://localhost:8081/api/green_earth/organization_info";
-
-  // --- 2. CẤU HÌNH TOOLBAR CHO TRÌNH SOẠN THẢO ---
+  const API = "http://localhost:8080/api/green_earth/organization_info";
   const quillModules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -127,7 +123,6 @@ export default function Organization() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Column: Logo & Socials */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
             <div className="w-32 h-32 bg-emerald-50 rounded-2xl mx-auto mb-4 flex items-center justify-center overflow-hidden border border-emerald-100">
@@ -170,8 +165,6 @@ export default function Organization() {
             </div>
           </div>
         </div>
-
-        {/* Right Column: Main Info & Detailed Description */}
         <div className="md:col-span-2">
           <motion.div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             <div className="space-y-2">
@@ -219,8 +212,6 @@ export default function Organization() {
                 />
               </div>
             </div>
-
-            {/* --- TRÌNH SOẠN THẢO CHI TIẾT --- */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700 ml-1">About Organization (Detailed Content)</label>
               <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-inner">
@@ -233,7 +224,6 @@ export default function Organization() {
                   className="min-h-[300px]"
                 />
               </div>
-              {/* Custom CSS để Quill trông mượt hơn trong form */}
               <style>{`
                 .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
                 .ql-container.ql-snow { border: none; min-height: 250px; font-size: 0.875rem; }

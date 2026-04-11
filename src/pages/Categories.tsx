@@ -1,4 +1,3 @@
-// src/pages/admin/Categories.tsx
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Tag, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
@@ -7,18 +6,14 @@ import { motion } from 'framer-motion';
 export default function Categories() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Trạng thái Form
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<{ id?: number, name: string }>({ name: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Gọi API lấy danh sách
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:8081/api/green_earth/article_categories');
-      // Tùy vào cách Java trả về (có bọc trong data hay không)
+      const res = await axios.get('http://localhost:8080/api/green_earth/article_categories');
       const data = res.data.data || res.data; 
       if (Array.isArray(data)) {
         setCategories(data);
@@ -34,7 +29,6 @@ export default function Categories() {
     fetchCategories();
   }, []);
 
-  // Xử lý Xóa
   const handleDelete = async (id: number) => {
     if (!window.confirm("CẢNH BÁO: Xóa danh mục có thể ảnh hưởng đến các bài viết đang thuộc danh mục này. Bạn có chắc chắn xóa?")) return;
     try {
@@ -46,7 +40,6 @@ export default function Categories() {
     }
   };
 
-  // Xử lý Lưu (Thêm/Sửa)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingData.name.trim()) {
@@ -108,7 +101,6 @@ export default function Categories() {
         )}
       </div>
 
-      {/* FORM THÊM / SỬA (Hiện ra khi bấm Thêm hoặc Sửa) */}
       {isEditing && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-200 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
@@ -150,7 +142,6 @@ export default function Categories() {
         </motion.div>
       )}
 
-      {/* DANH SÁCH TABLE */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>

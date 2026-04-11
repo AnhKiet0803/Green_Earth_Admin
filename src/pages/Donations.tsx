@@ -3,7 +3,7 @@ import { Search, Download, DollarSign, ArrowUpRight, User, Loader2 } from 'lucid
 import { motion, AnimatePresence } from 'framer-motion'; 
 import * as XLSX from 'xlsx';
 
-const API_URL = "http://localhost:8081/api/green_earth/donation";
+const API_URL = "http://localhost:8080/api/green_earth/donation";
 
 export default function Donations() {
   const [donations, setDonations] = useState([]);
@@ -18,8 +18,6 @@ export default function Donations() {
         const result = await response.json();
         
         console.log("Dữ liệu thô nhận được:", result);
-
-        // CHỈNH SỬA TẠI ĐÂY: Vì Backend trả về Array trực tiếp [...]
         let rawData = [];
         if (Array.isArray(result)) {
           rawData = result;
@@ -27,10 +25,8 @@ export default function Donations() {
           rawData = result.data;
         }
 
-        // ✅ Sửa lại logic Mapping để khớp hoàn toàn với DTO Backend trả về
         const mappedData = rawData.map(item => ({
           id: item.id,
-          // Lấy trực tiếp donorName và campaignName từ JSON API
           donorName: item.donorName || "Anonymous", 
           campaignName: item.campaignName || "General",
           amount: Number(item.amount) || 0,
@@ -48,14 +44,12 @@ export default function Donations() {
     fetchDonations();
   }, []);
 
-  // Tính toán các con số thống kê
   const totalAmount = donations.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const count = donations.length;
   const largestDonation = donations.length > 0 
     ? Math.max(...donations.map(d => Number(d.amount) || 0)) 
     : 0;
 
-  // Lọc tìm kiếm
   const filteredDonations = donations.filter(d => {
     const search = searchTerm.toLowerCase();
     return (
@@ -80,7 +74,6 @@ export default function Donations() {
 
   return (
     <div className="space-y-6">
-      {/* --- HEADER --- */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Donation Management</h1>
@@ -96,7 +89,6 @@ export default function Donations() {
         </button>
       </div>
 
-      {/* --- STATS CARDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-600 p-6 rounded-2xl text-white shadow-lg shadow-emerald-100">
           <div className="flex items-center justify-between mb-4">
@@ -125,7 +117,6 @@ export default function Donations() {
         </motion.div>
       </div>
 
-      {/* --- TABLE --- */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">

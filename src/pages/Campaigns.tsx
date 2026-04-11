@@ -4,14 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
-
-
-const API_URL = "http://localhost:8081/api/green_earth/campaign";
-const DONATION_API = "http://localhost:8081/api/green_earth/donation";
+const API_URL = "http://localhost:8080/api/green_earth/campaign";
+const DONATION_API = "http://localhost:8080/api/green_earth/donation";
 
 export default function Campaigns() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(""); 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,27 +25,19 @@ export default function Campaigns() {
     createdBy: 1
   });
 
-  // Hàm helper: Chỉ dùng để cắt chữ hiển thị trên thẻ Card (không dùng cho Modal nữa)
   const stripHtml = (html: any) => { 
-      if (!html) return "";
-      const tmp = document.createElement("DIV");
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || "";
-    };
+    if (!html) return "";
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [campRes, donRes] = await Promise.all([
-        fetch(API_URL),
-        fetch(DONATION_API)
-      ]);
-      
-      const campResult = await campRes.json();
-      const donResult = await donRes.json();
-
-      setCampaigns(campResult.data || []);
-      setDonations(donResult.data || donResult || []); 
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      setCampaigns(result.data || []);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -68,13 +57,22 @@ export default function Campaigns() {
   const handleOpenModal = (campaign: any = null) => {
     if (campaign) {
       setCurrentCampaign(campaign);
+      
+      const formatDateForInput = (dateInput: any) => {
+        if (!dateInput) return '';
+        const date = new Date(dateInput);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       setFormData({
         title: campaign.title,
-        // QUAN TRỌNG: Giữ nguyên HTML để ReactQuill hiển thị đúng định dạng và ảnh
         description: campaign.description || '', 
         location: campaign.location || '',
-        startDate: campaign.startDate ? campaign.startDate.split('T')[0] : '',
-        endDate: campaign.endDate ? campaign.endDate.split('T')[0] : '',
+        startDate: formatDateForInput(campaign.startDate),
+        endDate: formatDateForInput(campaign.endDate),
         targetAmount: campaign.targetAmount,
         image: campaign.image || '',
         createdBy: 1
@@ -86,7 +84,7 @@ export default function Campaigns() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (e:any) => {
+  const handleSave = async (e: any) => {
     e.preventDefault();
     const isUpdate = !!currentCampaign;
     const url = isUpdate ? `${API_URL}/${currentCampaign.id}` : API_URL;
@@ -103,14 +101,14 @@ export default function Campaigns() {
         fetchAllData();
         setIsModalOpen(false);
       } else {
-          alert("Lưu thất bại! Vui lòng kiểm tra lại dữ liệu.");
+        alert("Lưu thất bại!");
       }
     } catch (error) {
       alert("Lỗi kết nối Server!");
     }
   };
 
-  const handleDelete = async (id:any) => {
+  const handleDelete = async (id: any) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa chiến dịch này?")) return;
     try {
       const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
@@ -122,7 +120,6 @@ export default function Campaigns() {
 
   return (
     <div className="space-y-6">
-      {/* Header và Thanh tìm kiếm */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Campaign Management</h1>
@@ -141,36 +138,24 @@ export default function Campaigns() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search campaigns by title or location..." 
+            placeholder="Search campaigns..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
       </div>
 
-      {/* Hiển thị danh sách Card */}
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-emerald-600" /></div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <AnimatePresence mode='popLayout'>
             {filteredCampaigns.map((campaign) => {
-              const totalRaised = donations
-                .filter(d => 
-                  String(d.campaignId) === String(campaign.id) || 
-                  d.campaignName?.trim() === campaign.title?.trim()
-                )
-                .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-
-              const goal = Number(campaign.targetAmount) || 0;
-              let progress = 0;
-              if (goal > 0) {
-                const rawProgress = (totalRaised / goal) * 100;
-                progress = totalRaised > 0 && rawProgress < 1 ? 1 : Math.min(Math.round(rawProgress), 100);
-              }
-
-              const status = (progress >= 100) ? 'COMPLETED' : (campaign.status || 'PLANNED');
+              const status = campaign.status || 'UPCOMING';
+              const progress = campaign.progressPercentage || 0;
+              const raised = campaign.raisedAmount || 0;
+              const goal = campaign.targetAmount || 0;
 
               return (
                 <motion.div
@@ -190,42 +175,34 @@ export default function Campaigns() {
                     <div className="absolute top-4 right-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${
                         status === 'ONGOING' ? 'bg-emerald-500 text-white' : 
-                        status === 'COMPLETED' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white'
+                        status === 'COMPLETED' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-white'
                       }`}>{status}</span>
                     </div>
                   </div>
 
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-slate-900 text-lg leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">{campaign.title}</h3>
+                      <h3 className="font-bold text-slate-900 text-lg group-hover:text-emerald-600 transition-colors line-clamp-1">{campaign.title}</h3>
                       <div className="flex gap-1 shrink-0">
                          <button onClick={() => handleOpenModal(campaign)} className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
                          <button onClick={() => handleDelete(campaign.id)} className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </div>
 
-                    {/* Vẫn dùng stripHtml ở đây để hiển thị bản xem trước gọn gàng */}
-                    <p className="text-slate-500 text-sm mb-6 line-clamp-2">
-                        {stripHtml(campaign.description)}
-                    </p>
+                    <p className="text-slate-500 text-sm mb-6 line-clamp-2">{stripHtml(campaign.description)}</p>
                     
                     <div className="space-y-4 mt-auto">
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-500">Donation Progress</span>
+                          <span className="text-slate-500">Progress</span>
                           <span className="font-bold text-slate-900">{progress}%</span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 1 }}
-                            className="h-full bg-emerald-500"
-                          ></motion.div>
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-emerald-500" />
                         </div>
-                        <div className="flex justify-between mt-2 text-xs">
-                          <span className="text-slate-500 text-[11px]">Raised: <span className="font-bold text-slate-900">${totalRaised.toLocaleString()}</span></span>
-                          <span className="text-slate-500 text-[11px]">Goal: <span className="font-bold text-slate-900">${goal.toLocaleString()}</span></span>
+                        <div className="flex justify-between mt-2 text-[11px]">
+                          <span>Raised: <b>${raised.toLocaleString()}</b></span>
+                          <span>Goal: <b>${goal.toLocaleString()}</b></span>
                         </div>
                       </div>
 
@@ -248,17 +225,14 @@ export default function Campaigns() {
         </div>
       )}
 
-      {/* MODAL FORM TẠO/SỬA CHIẾN DỊCH */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-            
-            {/* Tăng chiều rộng Modal (max-w-4xl) để có không gian viết bài dài */}
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-6 border-b flex items-center justify-between bg-slate-50">
-                <h2 className="text-xl font-bold text-slate-900">{currentCampaign ? 'Update Campaign' : 'Create Campaign'}</h2>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-500" /></button>
+                <h2 className="text-xl font-bold">{currentCampaign ? 'Update Campaign' : 'Create Campaign'}</h2>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5" /></button>
               </div>
 
               <form onSubmit={handleSave} className="overflow-y-auto p-6 space-y-6">
@@ -267,23 +241,19 @@ export default function Campaigns() {
                   <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" />
                 </div>
                 
-                {/* --- TRÌNH SOẠN THẢO BÀI VIẾT --- */}
                 <div className="space-y-1">
-                  <label className="text-sm font-bold text-slate-700">Detailed Description (Supports formatting & images)</label>
-                  
-                  {/* Cấu hình chiều cao cho Quill để soạn bài dài dễ dàng */}
+                  <label className="text-sm font-bold text-slate-700">Detailed Description</label>
                   <div className="h-[300px] mb-12">
                     <ReactQuill 
                       theme="snow"
                       value={formData.description}
-                      onChange={(content:any) => setFormData({...formData, description: content})}
+                      onChange={(content) => setFormData({...formData, description: content})}
                       className="h-full bg-white"
                       modules={{
                         toolbar: [
                           [{ 'header': [1, 2, 3, false] }],
-                          ['bold', 'italic', 'underline', 'strike'],
+                          ['bold', 'italic', 'underline'],
                           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                          [{ 'color': [] }, { 'background': [] }],
                           ['link', 'image'],
                           ['clean']
                         ],
@@ -292,38 +262,36 @@ export default function Campaigns() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700">Location</label>
-                    <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                    <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700">Goal ($)</label>
-                    <input type="number" required value={formData.targetAmount} onChange={e => setFormData({...formData, targetAmount: Number(e.target.value)})} className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                    <input type="number" required value={formData.targetAmount} onChange={e => setFormData({...formData, targetAmount: Number(e.target.value)})} className="w-full px-4 py-2 border rounded-xl outline-none" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700">Start Date</label>
-                    <input type="date" required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none" />
+                    <input type="date" required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-4 py-2 border rounded-xl" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700">End Date</label>
-                    <input type="date" required value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none" />
+                    <input type="date" required value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full px-4 py-2 border rounded-xl" />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-sm font-bold text-slate-700">Thumbnail Image URL</label>
-                  <input type="text" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="https://..." />
+                  <label className="text-sm font-bold text-slate-700">Thumbnail URL</label>
+                  <input type="text" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="w-full px-4 py-2 border rounded-xl outline-none" placeholder="https://..." />
                 </div>
 
-                <div className="pt-4 pb-2">
-                    <button type="submit" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all active:scale-[0.98] shadow-lg shadow-emerald-200">
-                    Save Campaign
-                    </button>
-                </div>
+                <button type="submit" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 shadow-lg transition-all">
+                  Save Campaign
+                </button>
               </form>
             </motion.div>
           </div>

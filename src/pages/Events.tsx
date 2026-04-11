@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Calendar as CalendarIcon, MapPin, Users, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const API_URL = "http://localhost:8081/api/green_earth/event";
+const API_URL = "http://localhost:8080/api/green_earth/event";
 
 export default function Events() {
   const [events, setEvents] = useState([]);
