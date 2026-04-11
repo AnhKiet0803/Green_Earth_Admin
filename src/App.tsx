@@ -9,6 +9,12 @@ import Organization from './pages/Organization';
 import Sponsors from './pages/Sponsors';
 import Celebrities from './pages/Celebrities';
 import Donations from './pages/Donations';
+import CreateEvent from './pages/CreateEvent';
+import EditEvent from './pages/EditEvent';
+import CreateCampaign from './pages/CreateCampaign';
+import EditCampaign from './pages/EditCampaign';
+import CreateArticle from './pages/CreateArticle';
+import EditArticle from './pages/EditArticle';
 
 export default function App() {
   return (
@@ -24,6 +30,17 @@ export default function App() {
           <Route path="/sponsors" element={<Sponsors />} />
           <Route path="/celebrities" element={<Celebrities />} />
           <Route path="/donations" element={<Donations />} />
+          <Route path="/admin/events" element={<Events />} />
+          {/* Route tạo mới sự kiện */}
+          <Route path="/admin/events/create" element={<CreateEvent />} />
+          {/* Route sửa sự kiện (nhận ID động) */}
+          <Route path="/admin/events/edit/:id" element={<EditEvent />} />
+          <Route path="/admin/campaigns" element={<Campaigns />} />
+          <Route path="/admin/campaigns/create" element={<CreateCampaign />} />
+          <Route path="/admin/campaigns/edit/:id" element={<EditCampaign />} />
+          <Route path="/admin/articles" element={<Articles />} />
+          <Route path="/admin/articles/create" element={<CreateArticle />} />
+          <Route path="/admin/articles/edit/:id" element={<EditArticle />} />
         </Routes>
       </Layout>
     </Router>
