@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Edit2, Trash2, Mail, Phone, X } from 'lucide-react';
+import { Search, Edit2, Trash2, Mail, Phone, X, Loader2, UserPlus } from 'lucide-react';
 import '../css/Users.css';
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  avatar: string;
+}
+
 const UsersPage = () => {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -17,7 +26,7 @@ const UsersPage = () => {
     avatar: ''
   });
 
-  const API_URL = 'http://localhost:8080/api/green_earth/user';
+  const API_URL = 'http://localhost:8081/api/green_earth/user';
 
   const fetchUsers = () => {
     setLoading(true);
@@ -42,12 +51,12 @@ const UsersPage = () => {
       user.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const method = editingUser ? 'PUT' : 'POST';
     const url = editingUser ? `${API_URL}/${editingUser.id}` : API_URL;
@@ -57,23 +66,29 @@ const UsersPage = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     })
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.data) {
-          if (editingUser) {
-            setUsers(users.map((u) => (u.id === editingUser.id ? resData.data : u)));
-          } else {
-            setUsers([...users, resData.data]);
-          }
-          closeModal();
-        } else {
-          alert(resData.message || 'Server error occurred!');
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `Server error ${res.status}`);
         }
+        // Xử lý trường hợp API trả về thành công nhưng body rỗng (tránh lỗi Uncaught Promise)
+        if (res.status === 204 || res.headers.get('content-length') === '0') {
+          return {};
+        }
+        return res.json();
       })
-      .catch((err) => console.error('Processing error:', err));
+      .then((resData) => {
+        alert("Update Successful!");
+        fetchUsers(); // Gọi lại hàm fetch để làm mới data, đảm bảo Avatar Link hiện lên ngay lập tức
+        closeModal();
+      })
+      .catch((err) => {
+        console.error('Promise Error:', err);
+        alert("System error: Could not save changes. " + err.message);
+      });
   };
 
-  const handleDeleteUser = (id) => {
+  const handleDeleteUser = (id: number) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     fetch(`${API_URL}/${id}`, {
@@ -89,15 +104,15 @@ const UsersPage = () => {
       .catch((err) => console.error('Delete error:', err));
   };
 
-  const openModal = (user = null) => {
+  const openModal = (user: User | null = null) => {
     if (user) {
       setEditingUser(user);
       setFormData({
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        avatar: user.avatar
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        role: user.role || '',
+        avatar: user.avatar || ''
       });
     } else {
       setEditingUser(null);
@@ -119,11 +134,14 @@ const UsersPage = () => {
 
   return (
     <div className="users-page">
-      <div className="users-header">
+      <div className="users-header flex justify-between items-center">
         <div>
           <h1 className="users-title">User Management</h1>
-          <p className="users-subtitle">List of administrators and system users</p>
+          <p className="users-subtitle">Manage system administrators and members</p>
         </div>
+        <button onClick={() => openModal()} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-all shadow-md">
+           <UserPlus className="w-4 h-4" /> Add New User
+        </button>
       </div>
 
       <div className="users-card">
@@ -144,18 +162,19 @@ const UsersPage = () => {
           <table className="users-table">
             <thead>
               <tr className="users-table-head-row">
-                <th>User</th>
-                <th>Contact</th>
-                <th>Role</th>
-                <th className="text-right">Actions</th>
+                <th>User Identity</th>
+                <th>Contact Information</th>
+                <th>Access Level</th>
+                <th className="text-right">Management</th>
               </tr>
             </thead>
 
             <tbody className="users-table-body">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="users-empty">
-                    Loading data...
+                  <td colSpan={4} className="users-empty">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600" />
+                    <p className="mt-2 text-slate-500">Syncing data...</p>
                   </td>
                 </tr>
               ) : filteredUsers.length > 0 ? (
@@ -164,11 +183,11 @@ const UsersPage = () => {
                     <td className="users-cell">
                       <div className="users-user-info">
                         <img
-                          src={user.avatar || 'https://via.placeholder.com/40'}
+                          src={user.avatar || 'https://ui-avatars.com/api/?name=' + user.name}
                           alt="avatar"
-                          className="users-avatar"
+                          className="users-avatar object-cover"
                         />
-                        <span className="users-name">{user.name}</span>
+                        <span className="users-name font-bold">{user.name}</span>
                       </div>
                     </td>
 
@@ -186,27 +205,17 @@ const UsersPage = () => {
                     </td>
 
                     <td className="users-cell">
-                      <span
-                        className={`users-role-badge ${
-                          user.role === 'admin' ? 'role-admin' : 'role-user'
-                        }`}
-                      >
-                        {user.role}
+                      <span className={`users-role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}`}>
+                        {user.role || 'user'}
                       </span>
                     </td>
 
                     <td className="users-cell users-actions-cell">
                       <div className="users-actions">
-                        <button
-                          onClick={() => openModal(user)}
-                          className="users-action-btn edit-btn"
-                        >
+                        <button onClick={() => openModal(user)} className="users-action-btn edit-btn" title="Edit User">
                           <Edit2 className="users-action-icon" />
                         </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="users-action-btn delete-btn"
-                        >
+                        <button onClick={() => handleDeleteUser(user.id)} className="users-action-btn delete-btn" title="Delete User">
                           <Trash2 className="users-action-icon" />
                         </button>
                       </div>
@@ -215,9 +224,7 @@ const UsersPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="users-empty">
-                    No users found
-                  </td>
+                  <td colSpan={4} className="users-empty">No users found</td>
                 </tr>
               )}
             </tbody>
@@ -230,7 +237,7 @@ const UsersPage = () => {
           <div className="users-modal">
             <div className="users-modal-header">
               <h2 className="users-modal-title">
-                {editingUser ? 'Edit User' : 'Add New User'}
+                {editingUser ? 'Update Profile' : 'Register New User'}
               </h2>
               <button onClick={closeModal} className="users-close-btn">
                 <X className="users-close-icon" />
@@ -239,19 +246,19 @@ const UsersPage = () => {
 
             <form onSubmit={handleSubmit} className="users-form">
               <div className="users-form-group">
-                <label className="users-label">Full name</label>
+                <label className="users-label">Full Name</label>
                 <input
                   required
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   className="users-input"
-                  placeholder="Enter your name"
+                  placeholder="e.g. John Doe"
                 />
               </div>
 
               <div className="users-form-group">
-                <label className="users-label">Email</label>
+                <label className="users-label">Email Address</label>
                 <input
                   required
                   type="email"
@@ -259,24 +266,24 @@ const UsersPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="users-input"
-                  placeholder="Enter your email"
+                  placeholder="example@domain.com"
                 />
               </div>
 
-              <div className="users-form-grid">
+              <div className="users-form-grid grid grid-cols-2 gap-4">
                 <div className="users-form-group">
-                  <label className="users-label">Phone number</label>
+                  <label className="users-label">Phone Number</label>
                   <input
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     className="users-input"
-                    placeholder="Enter your phone number"
+                    placeholder="+84..."
                   />
                 </div>
 
                 <div className="users-form-group">
-                  <label className="users-label">Role</label>
+                  <label className="users-label">System Role</label>
                   <select
                     name="role"
                     value={formData.role}
@@ -284,29 +291,34 @@ const UsersPage = () => {
                     className="users-input"
                   >
                     <option value="">Select role</option>
-                    <option value="admin">admin</option>
-                    <option value="user">user</option>
+                    <option value="admin">Administrator</option>
+                    <option value="user">Standard User</option>
                   </select>
                 </div>
               </div>
 
               <div className="users-form-group">
-                <label className="users-label">URL Avatar</label>
-                <input
-                  name="avatar"
-                  value={formData.avatar}
-                  onChange={handleChange}
-                  className="users-input"
-                  placeholder="https://..."
-                />
+                <label className="users-label">Avatar Link (URL)</label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    name="avatar"
+                    value={formData.avatar}
+                    onChange={handleChange}
+                    className="users-input flex-1"
+                    placeholder="https://images.com/photo.jpg"
+                  />
+                  {formData.avatar && (
+                    <img src={formData.avatar} className="w-10 h-10 rounded-full border object-cover" alt="Preview" />
+                  )}
+                </div>
               </div>
 
-              <div className="users-form-actions">
+              <div className="users-form-actions mt-6">
                 <button type="button" onClick={closeModal} className="users-cancel-btn">
-                  Cancel
+                  Discard
                 </button>
-                <button type="submit" className="users-save-btn">
-                  Save
+                <button type="submit" className="users-save-btn bg-emerald-600 text-white font-bold">
+                  {editingUser ? 'Save Changes' : 'Confirm Registration'}
                 </button>
               </div>
             </form>

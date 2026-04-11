@@ -1,25 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Type, Image as ImageIcon, Tag } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 const API_URL = "http://localhost:8081/api/green_earth/article";
+// Thay đổi đường dẫn này cho khớp với API lấy danh mục của bạn
+const CATEGORY_API_URL = "http://localhost:8081/api/green_earth/article_categories"; 
 
 export default function CreateArticle() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]); // State lưu danh sách Category
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
     image: '',
-    categoryId: 1,
-    authorId: 1
+    categoryId: 0, // Tạm để 0, sẽ tự cập nhật khi tải xong danh mục
+    authorId: 1 
   });
 
-  const handleSave = async (e: React.FormEvent) => {
+  // TỰ ĐỘNG LẤY DANH SÁCH DANH MỤC TỪ DATABASE KHI VÀO TRANG
+  useEffect(() => {
+    fetch(CATEGORY_API_URL)
+      .then(res => res.json())
+      .then(resData => {
+        // Giả sử backend trả về dạng { data: [...] }
+        const catList = resData.data || resData; 
+        if (catList && catList.length > 0) {
+          setCategories(catList);
+          // Tự động chọn danh mục đầu tiên làm mặc định
+          setFormData(prev => ({ ...prev, categoryId: catList[0].id })); 
+        }
+      })
+      .catch(err => console.error("Chưa có API lấy danh mục hoặc lỗi:", err));
+  }, []);
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (formData.categoryId === 0) {
+      alert("Vui lòng chọn danh mục trước khi lưu!");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(API_URL, {
@@ -27,9 +52,16 @@ export default function CreateArticle() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (response.ok) navigate('/admin/articles');
+      
+      if (response.ok) {
+        alert("Article created successfully!");
+        navigate('/admin/articles');
+      } else {
+        const errorData = await response.json();
+        alert("Server từ chối dữ liệu:\n" + (errorData.message || JSON.stringify(errorData)));
+      }
     } catch (error) {
-      alert("Error saving article");
+      alert("Không thể kết nối đến Server!");
     } finally {
       setLoading(false);
     }
@@ -52,12 +84,24 @@ export default function CreateArticle() {
               <label className="text-[11px] font-black text-slate-400 uppercase ml-1 flex items-center gap-2"><Type className="w-3 h-3" /> Title</label>
               <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium" />
             </div>
+            
+            {/* ĐỔ DỮ LIỆU DANH MỤC THẬT TỪ DATABASE VÀO ĐÂY */}
             <div className="space-y-2">
               <label className="text-[11px] font-black text-slate-400 uppercase ml-1 flex items-center gap-2"><Tag className="w-3 h-3" /> Category</label>
-              <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: parseInt(e.target.value)})} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium">
-                <option value="1">Environment</option>
-                <option value="2">Climate Change</option>
-                <option value="3">Recycling</option>
+              <select 
+                value={formData.categoryId} 
+                onChange={e => setFormData({...formData, categoryId: Number(e.target.value)})} 
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-medium"
+              >
+                {categories.length > 0 ? (
+                  categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} {/* Hoặc cat.categoryName tùy cách đặt tên bên DB */}
+                    </option>
+                  ))
+                ) : (
+                  <option value={0}>Đang tải danh mục...</option>
+                )}
               </select>
             </div>
           </div>

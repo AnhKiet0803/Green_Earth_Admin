@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Type, Tag, Image as ImageIcon } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 const API_URL = "http://localhost:8081/api/green_earth/article";
+const CATEGORY_API_URL = "http://localhost:8081/api/green_earth/article_categories"; // Thêm API lấy danh mục
 
 export default function EditArticle() {
   const { id } = useParams();
@@ -13,19 +14,42 @@ export default function EditArticle() {
   const [fetching, setFetching] = useState(true);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<any>(null);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]); // State lưu danh sách Category
 
   useEffect(() => {
+    // 1. Tải danh sách Danh mục trước
+    fetch(CATEGORY_API_URL)
+      .then(res => res.json())
+      .then(resData => {
+        const catList = resData.data || resData;
+        if (catList && catList.length > 0) setCategories(catList);
+      })
+      .catch(err => console.error("Lỗi tải danh mục:", err));
+
+    // 2. Tải thông tin Bài viết
     const fetchDetail = async () => {
       try {
         const response = await fetch(`${API_URL}/${id}`);
         const result = await response.json();
-        setFormData(result.data);
+        const data = result.data || result; // Phòng hờ API trả trực tiếp object
+        
+        // BẮT BUỘC MAP LẠI DATA ĐỂ LẤY ĐÚNG ID CỦA CATEGORY VÀ AUTHOR
+        setFormData({
+          title: data.title || '',
+          content: data.content || '',
+          image: data.image || '',
+          // Lấy categoryId, nếu không có thì dò vào object category.id
+          categoryId: data.categoryId || (data.category && data.category.id) || 1,
+          authorId: data.authorId || (data.author && data.author.id) || 1
+        });
       } catch (error) {
+        alert("Lỗi tải thông tin bài viết");
         navigate('/admin/articles');
       } finally {
         setFetching(false);
       }
     };
+    
     fetchDetail();
   }, [id, navigate]);
 
@@ -38,15 +62,23 @@ export default function EditArticle() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (response.ok) navigate('/admin/articles');
+      
+      if (response.ok) {
+        alert("Article updated successfully!");
+        navigate('/admin/articles');
+      } else {
+        // Hiện lỗi chi tiết nếu server từ chối
+        const errorData = await response.json();
+        alert("Server từ chối dữ liệu:\n" + (errorData.message || JSON.stringify(errorData)));
+      }
     } catch (error) {
-      alert("Update failed");
+      alert("Không thể kết nối đến Server!");
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600" /></div>;
+  if (fetching) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
@@ -65,12 +97,24 @@ export default function EditArticle() {
               <label className="text-[11px] font-black text-slate-400 uppercase ml-1 flex items-center gap-2"><Type className="w-3 h-3" /> Title</label>
               <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium" />
             </div>
+            
             <div className="space-y-2">
               <label className="text-[11px] font-black text-slate-400 uppercase ml-1 flex items-center gap-2"><Tag className="w-3 h-3" /> Category</label>
-              <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: parseInt(e.target.value)})} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
-                <option value="1">Environment</option>
-                <option value="2">Climate Change</option>
-                <option value="3">Recycling</option>
+              {/* HIỂN THỊ DANH SÁCH DANH MỤC THẬT TỪ DATABASE */}
+              <select 
+                value={formData.categoryId || ""} 
+                onChange={e => setFormData({...formData, categoryId: Number(e.target.value)})} 
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+              >
+                {categories.length > 0 ? (
+                  categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} {/* Nhớ đổi cat.name thành cat.categoryName nếu Backend của bạn đặt tên thế nhé */}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">Đang tải danh mục...</option>
+                )}
               </select>
             </div>
           </div>

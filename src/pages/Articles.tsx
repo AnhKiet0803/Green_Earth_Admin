@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Calendar, Tag, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = "http://localhost:8081/api/green_earth/article";
 
-// Định nghĩa kiểu dữ liệu để hết báo đỏ TypeScript
+// Interface khớp hoàn toàn với ArticleRes bên Java của bạn
 interface Article {
   id: number;
   title: string;
-  categoryName: string;
-  createdAt: string;
   content: string;
   image: string;
+  authorId: number;
+  categoryId: number;
+  categoryName?: string; // Trường này rất quan trọng để hiển thị tên
+  createdAt: string;    // Dạng chuỗi ISO từ Timestamp Java
 }
 
 export default function Articles() {
@@ -21,12 +23,14 @@ export default function Articles() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
+  // Hàm lấy dữ liệu từ API
   const fetchArticles = async () => {
     try {
       setLoading(true);
       const response = await fetch(API_URL);
       const result = await response.json();
-      setArticles(result.data || []);
+      // result.data là mảng Articles nếu bạn dùng ResponseHandler chuẩn
+      setArticles(result.data || []); 
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -38,30 +42,38 @@ export default function Articles() {
     fetchArticles();
   }, []);
 
+  // Hàm xử lý xóa bài viết
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this article?")) return;
     try {
-      const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (response.ok) fetchArticles();
+      const response = await fetch(`${API_URL}/${id}`, { 
+        method: 'DELETE' 
+      });
+      if (response.ok) {
+        fetchArticles(); // Tải lại danh sách sau khi xóa thành công
+      } else {
+        alert("Delete failed! Maybe this article is being referenced elsewhere.");
+      }
     } catch (error) {
-      alert("Delete failed");
+      alert("Error connecting to server.");
     }
   };
 
+  // Lọc bài viết theo ô tìm kiếm (Tìm theo Title hoặc Category Name)
   const filteredArticles = articles.filter((article) => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      article.title?.toLowerCase().includes(searchLower) ||
-      article.categoryName?.toLowerCase().includes(searchLower)
-    );
+    const titleMatch = article.title?.toLowerCase().includes(searchLower);
+    const categoryMatch = article.categoryName?.toLowerCase().includes(searchLower);
+    return titleMatch || categoryMatch;
   });
 
   return (
     <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Article Management</h1>
-          <p className="text-slate-500">Manage environmental assessments and news.</p>
+          <p className="text-slate-500">View and manage your environmental news posts.</p>
         </div>
         <button 
           onClick={() => navigate('/admin/articles/create')}
@@ -71,6 +83,7 @@ export default function Articles() {
         </button>
       </div>
 
+      {/* Search Section */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -84,13 +97,14 @@ export default function Articles() {
         </div>
       </div>
 
+      {/* Table Section */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                 <th className="px-6 py-4">Title</th>
-                <th className="px-6 py-4">Creation Date</th>
+                <th className="px-6 py-4">Date Created</th>
                 <th className="px-6 py-4">Category</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -104,26 +118,60 @@ export default function Articles() {
                 </tr>
               ) : filteredArticles.map((article) => (
                 <tr key={article.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900 line-clamp-1">{article.title}</td>
+                  {/* Title Column */}
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900">
+                    <div className="max-w-[300px] truncate" title={article.title}>
+                      {article.title}
+                    </div>
+                  </td>
+
+                  {/* Date Created Column */}
                   <td className="px-6 py-4 text-sm text-slate-500">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(article.createdAt).toLocaleDateString('en-GB')}
+                      {article.createdAt 
+                        ? new Date(article.createdAt).toLocaleDateString('en-GB') 
+                        : "No Date"}
                     </div>
                   </td>
+
+                  {/* Category Badge Column */}
                   <td className="px-6 py-4">
                     <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold flex items-center gap-1 w-fit">
-                      <Tag className="w-3 h-3" /> {article.categoryName || "Environment"}
+                      <Tag className="w-3 h-3" /> 
+                      {/* Hiển thị categoryName từ ArticleRes Java */}
+                      {article.categoryName || "General"}
                     </span>
                   </td>
+
+                  {/* Action Buttons */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => navigate(`/admin/articles/edit/${article.id}`)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(article.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                      <button 
+                        onClick={() => navigate(`/admin/articles/edit/${article.id}`)} 
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(article.id)} 
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              
+              {/* Empty State */}
+              {!loading && filteredArticles.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-10 text-center text-slate-400 italic">
+                    No articles found matching your search.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

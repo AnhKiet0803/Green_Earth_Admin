@@ -14,9 +14,9 @@ export default function CreateEvent() {
     title: '',
     description: '',
     location: '',
-    eventDate: new Date().toISOString().split('T')[0],
+    eventDate: new Date().toISOString().split('T')[0], // yyyy-MM-dd
     image: '',
-    createdBy: 1
+    createdBy: 1 // LƯU Ý: Phải đảm bảo trong bảng users có người dùng mang ID = 1
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,12 +30,18 @@ export default function CreateEvent() {
       });
 
       if (response.ok) {
-        navigate('/admin/events'); // Quay lại trang danh sách
+        alert("Event created successfully!");
+        navigate('/admin/events'); 
       } else {
-        alert("Lỗi khi tạo sự kiện!");
+        // NÂNG CẤP BẮT LỖI TẠI ĐÂY:
+        const errorData = await response.json();
+        // Hiển thị chính xác thông báo lỗi từ Backend trả về
+        alert("Server từ chối dữ liệu:\n" + (errorData.message || JSON.stringify(errorData)));
+        console.error("Chi tiết lỗi từ Server:", errorData);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Lỗi mạng:", error);
+      alert("Không thể kết nối đến Server!");
     } finally {
       setLoading(false);
     }
@@ -86,7 +92,7 @@ export default function CreateEvent() {
               <ReactQuill 
                 theme="snow" 
                 value={formData.description} 
-                onChange={(val:string) => setFormData({...formData, description: val})}
+                onChange={(val: string) => setFormData({...formData, description: val})}
                 className="h-full bg-slate-50 rounded-2xl overflow-hidden border-slate-100"
               />
             </div>
