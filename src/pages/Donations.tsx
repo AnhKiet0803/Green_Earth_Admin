@@ -1,14 +1,38 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { Search, Download, DollarSign, ArrowUpRight, User, Loader2, Calendar, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion'; 
+=======
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Filter, Download, DollarSign, ArrowUpRight, User, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
 import * as XLSX from 'xlsx';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { unwrapListData } from '../utils/unwrapListData';
 
-const API_URL = "http://localhost:8081/api/green_earth/donation";
+const API_URL = "http://localhost:8080/api/green_earth/donation";
 
 export default function Donations() {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebouncedValue(searchTerm, 350);
+
+  const fetchDonations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({ page: '0', size: '500' });
+      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      const response = await fetch(`${API_URL}?${params}`);
+      const result = await response.json();
+      setDonations(unwrapListData(result.data));
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch]);
 
   // 1. THIẾT LẬP MẶC ĐỊNH LỌC THEO NĂM HIỆN TẠI
   const [dateFilter, setDateFilter] = useState(() => {
@@ -25,6 +49,7 @@ export default function Donations() {
   });
 
   useEffect(() => {
+<<<<<<< HEAD
     const fetchDonations = async () => {
       try {
         setLoading(true);
@@ -54,9 +79,12 @@ export default function Donations() {
         setLoading(false);
       }
     };
+=======
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
     fetchDonations();
-  }, []);
+  }, [fetchDonations]);
 
+<<<<<<< HEAD
   // 2. LOGIC LỌC TỔNG HỢP: Tên/Campaign + Khoảng ngày
   const filteredDonations = donations.filter(d => {
     const search = searchTerm.toLowerCase();
@@ -80,22 +108,39 @@ export default function Donations() {
   const count = filteredDonations.length;
   const largestDonation = filteredDonations.length > 0 
     ? Math.max(...filteredDonations.map(d => Number(d.amount) || 0)) 
+=======
+  const totalAmount = donations.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const count = donations.length;
+  const largestDonation = donations.length > 0 
+    ? Math.max(...donations.map(d => d.amount || 0)) 
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
     : 0;
 
   const exportToExcel = () => {
-    const excelData = filteredDonations.map(d => ({
-      "Donor Name": d.donorName,
-      "Campaign": d.campaignName,
+    const excelData = donations.map(d => ({
+      "Donor Name": d.donorName || "Anonymous",
+      "Campaign": d.campaignName || "General Donation",
       "Amount ($)": d.amount,
+<<<<<<< HEAD
       "Payment Method": d.paymentMethod,
       "Date": d.donationDate ? new Date(d.donationDate).toLocaleDateString('en-GB') : "N/A"
+=======
+      "Payment Method": d.paymentMethod || "N/A",
+      "Date": d.donationDate ? new Date(d.donationDate).toLocaleDateString() : "N/A"
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
     }));
+
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Donations");
+<<<<<<< HEAD
     XLSX.writeFile(workbook, `Donations_Report_${dateFilter.start}_to_${dateFilter.end}.xlsx`);
+=======
+    
+    const fileName = `GreenEarth_Donations_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
   };
-
   return (
     <div className="space-y-6 text-left">
       {/* Header Section */}
@@ -108,8 +153,13 @@ export default function Donations() {
         </div>
         <button 
           onClick={exportToExcel}
+<<<<<<< HEAD
           disabled={filteredDonations.length === 0}
           className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+=======
+          disabled={donations.length === 0}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
         >
           <Download className="w-4 h-4 text-emerald-600" />
           Export Report
@@ -118,6 +168,7 @@ export default function Donations() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+<<<<<<< HEAD
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-600 p-6 rounded-[2rem] text-white shadow-lg shadow-emerald-100 relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
@@ -126,11 +177,27 @@ export default function Donations() {
             </div>
             <p className="text-emerald-100 text-xs font-bold uppercase tracking-tighter">Total Collected</p>
             <h3 className="text-3xl font-black mt-1">${totalAmount.toLocaleString()}</h3>
+=======
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-600 p-6 rounded-2xl text-white shadow-lg shadow-emerald-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-white/20 rounded-lg"><DollarSign className="w-6 h-6" /></div>
+            <span className="text-xs font-bold bg-white/20 px-2 py-1 rounded-full uppercase">Lifetime</span>
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
           </div>
           <div className="absolute -right-4 -bottom-4 opacity-10 text-white"><DollarSign size={120} /></div>
         </motion.div>
 
+<<<<<<< HEAD
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+=======
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
+        >
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><User className="w-6 h-6" /></div>
             <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Quantity</span>
@@ -139,7 +206,14 @@ export default function Donations() {
           <h3 className="text-3xl font-black text-slate-900 mt-1">{count}</h3>
         </motion.div>
 
+<<<<<<< HEAD
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+=======
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
+        >
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><ArrowUpRight className="w-6 h-6" /></div>
             <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Record</span>
@@ -149,6 +223,7 @@ export default function Donations() {
         </motion.div>
       </div>
 
+<<<<<<< HEAD
       {/* Filter Bar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="lg:col-span-2 relative bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group focus-within:border-emerald-500 transition-all">
@@ -180,6 +255,14 @@ export default function Donations() {
               className="text-xs font-bold text-slate-600 outline-none cursor-pointer hover:text-emerald-600 transition-colors"
               value={dateFilter.end}
               onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+=======
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input  type="text"  placeholder="Search by donor or campaign..."  value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
             />
           </div>
         </div>
@@ -201,6 +284,7 @@ export default function Donations() {
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
+<<<<<<< HEAD
                   <td colSpan={5} className="px-6 py-20 text-center">
                     <Loader2 className="w-10 h-10 animate-spin mx-auto text-emerald-600 opacity-20" />
                   </td>
@@ -235,6 +319,30 @@ export default function Donations() {
                       <td className="px-8 py-5 text-center">
                         <span className="text-[10px] font-black uppercase px-2 py-1 bg-slate-100 text-slate-500 rounded-md tracking-widest border border-slate-200">
                           {donation.paymentMethod}
+=======
+                  <td colSpan="5" className="px-6 py-10 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-emerald-600" />
+                  </td>
+                </tr>
+              ) : donations.length > 0 ? (
+                <AnimatePresence>
+                  {donations.map((donation, idx) => (
+                    <motion.tr key={donation.id || idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-medium text-slate-900">{donation.donorName || "Anonymous"}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {donation.campaignName || "General Donation"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-bold text-emerald-600">
+                          ${Number(donation.amount).toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-[10px] font-bold uppercase px-2 py-1 bg-slate-100 text-slate-500 rounded-md">
+                          {donation.paymentMethod || 'N/A'}
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
                         </span>
                       </td>
                       <td className="px-8 py-5 text-right">
@@ -248,10 +356,14 @@ export default function Donations() {
                 </AnimatePresence>
               ) : (
                 <tr>
+<<<<<<< HEAD
                   <td colSpan={5} className="px-6 py-32 text-center text-slate-300 italic flex flex-col items-center gap-3">
                     <Search className="w-10 h-10 opacity-10" />
                     <p className="font-serif">No donation records found for this period.</p>
                   </td>
+=======
+                  <td colSpan="5" className="px-6 py-10 text-center text-slate-400 text-sm">No donation records found.</td>
+>>>>>>> 51465dcfd0a4717d1b767f41a594c24706da0a74
                 </tr>
               )}
             </tbody>
