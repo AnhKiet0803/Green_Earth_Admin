@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Flag, Calendar, FileText, Users, Info, HeartHandshake, Star, DollarSign, Menu, X, LogOut, Search } from 'lucide-react';
+import { LayoutDashboard, Flag, Calendar, FileText, Users, Info, HeartHandshake, Star, DollarSign, BriefcaseBusiness, Menu, X, LogOut, Search } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,6 +18,7 @@ const navItems = [
   { title: 'Users', path: '/users', icon: Users },
   { title: 'Organization Info', path: '/organization', icon: Info },
   { title: 'Sponsors', path: '/sponsors', icon: HeartHandshake },
+  { title: 'Partner Management', path: '/partners-management', icon: BriefcaseBusiness },
   { title: 'Celebrities', path: '/celebrities', icon: Star },
   { title: 'Donations', path: '/donations', icon: DollarSign },
 ];
