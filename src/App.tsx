@@ -15,6 +15,7 @@ import CreateCampaign from './pages/CreateCampaign';
 import EditCampaign from './pages/EditCampaign';
 import CreateArticle from './pages/CreateArticle';
 import EditArticle from './pages/EditArticle';
+import EventRegistrations from './pages/EventRegistrations';
 
 export default function App() {
   return (
@@ -28,7 +29,6 @@ export default function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/organization" element={<Organization />} />
           <Route path="/sponsors" element={<Sponsors />} />
-          <Route path="/celebrities" element={<Celebrities />} />
           <Route path="/donations" element={<Donations />} />
           <Route path="/admin/events" element={<Events />} />
           {/* Route tạo mới sự kiện */}
@@ -41,6 +41,7 @@ export default function App() {
           <Route path="/admin/articles" element={<Articles />} />
           <Route path="/admin/articles/create" element={<CreateArticle />} />
           <Route path="/admin/articles/edit/:id" element={<EditArticle />} />
+          <Route path="/registrations" element={<EventRegistrations />} />
         </Routes>
       </Layout>
     </Router>

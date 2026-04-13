@@ -18,7 +18,7 @@ const navItems = [
   { title: 'Users', path: '/users', icon: Users },
   { title: 'Organization Info', path: '/organization', icon: Info },
   { title: 'Sponsors', path: '/sponsors', icon: HeartHandshake },
-  { title: 'Celebrities', path: '/celebrities', icon: Star },
+  { title: 'Event Registrations', path: '/registrations', icon: Star },
   { title: 'Donations', path: '/donations', icon: DollarSign },
 ];
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Star, Edit2, Trash2, X, Loader2, Link as LinkIcon, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = "http://localhost:8080/api/green_earth/celebrity";
+const API_URL = "http://localhost:8081/api/green_earth/celebrity";
 
 // 1. Định nghĩa Interface để sửa lỗi "Property does not exist on type never"
 interface Celebrity {
